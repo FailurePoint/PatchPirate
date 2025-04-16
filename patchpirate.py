@@ -99,7 +99,7 @@ def generate_gravatar_url(email):
     # Calculate MD5 hash
     email_hash = hashlib.md5(email.encode('utf-8')).hexdigest()
     # Return the Gravatar URL
-    return f"https://www.gravatar.com/{email_hash}"
+    return f"https://www.gravatar.com/{email_hash} {Fore.BLUE}({Fore.LIGHTBLACK_EX}{email}{Fore.BLUE})"
 
 if __name__ == "__main__":
     username = input(f"{Fore.GREEN}Enter GitHub username: ").strip()
