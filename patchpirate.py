@@ -93,7 +93,7 @@ def handle_rate_limit(response):
     print(f"{Fore.YELLOW}Rate limit resets at: {Fore.CYAN}{reset_time}")
     raise Exception("Rate limit hit. Please wait for cooldown or use a personal access token.")
 
-def get_gravatar_url(email):
+def generate_gravatar_url(email):
     # Normalize the email address
     email = email.strip().lower()
     # Calculate MD5 hash
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         print("---------------------------------------------------------------------")
         print(f"{Fore.RED}Gravitars:\n")
         for email in email_addresses:
-            print(f"{Fore.GREEN}{get_gravatar_url(email)}")         
+            print(f"{Fore.GREEN}{generate_gravatar_url(email)}")         
             
 
     
