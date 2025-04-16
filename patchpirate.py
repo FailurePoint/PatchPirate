@@ -2,6 +2,7 @@ import requests
 from halo import Halo
 from colorama import Fore, init
 from datetime import datetime
+import hashlib
 
 # Initialize colorama with auto reset
 init(autoreset=True)
@@ -92,6 +93,14 @@ def handle_rate_limit(response):
     print(f"{Fore.YELLOW}Rate limit resets at: {Fore.CYAN}{reset_time}")
     raise Exception("Rate limit hit. Please wait for cooldown or use a personal access token.")
 
+def get_gravatar_url(email):
+    # Normalize the email address
+    email = email.strip().lower()
+    # Calculate MD5 hash
+    email_hash = hashlib.md5(email.encode('utf-8')).hexdigest()
+    # Return the Gravatar URL
+    return f"https://www.gravatar.com/{email_hash}"
+
 if __name__ == "__main__":
     username = input(f"{Fore.GREEN}Enter GitHub username: ").strip()
     email_addresses = set()
@@ -99,9 +108,6 @@ if __name__ == "__main__":
     
     try:
         user_commits = get_user_commits(username)
-        print(f"{Fore.BLUE}Total commits found: {Fore.RED}{len(user_commits)}")
-        print("---------------------------------------------------------------------")
-
         for commit in user_commits:
             email = commit['email']
             if email:
@@ -109,10 +115,22 @@ if __name__ == "__main__":
                     obfuscated = email
                 else:
                     email_addresses.add(email)
-        print(f"\nObfucated noreply address: {Fore.GREEN}{obfuscated}")
-        print("Email addresses found:")
+
+        print(f"{Fore.BLUE}Total commits found: {Fore.RED}{len(user_commits)}")
+        print("---------------------------------------------------------------------")
+        print(f"Obfucated noreply address: {Fore.GREEN}{obfuscated}")
+        print("---------------------------------------------------------------------")
+        print(f"{Fore.RED}Email Addresses:\n")
         for email in email_addresses:
             print(f"{Fore.GREEN}{email}")
+        print("---------------------------------------------------------------------")
+        print(f"{Fore.RED}Gravitars:\n")
+        for email in email_addresses:
+            print(f"{Fore.GREEN}{get_gravatar_url(email)}")         
+            
+
+    
+
 
     except Exception as e:
         print(f"An error occurred: {e}")
