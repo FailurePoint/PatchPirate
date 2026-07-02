@@ -3,6 +3,7 @@ from halo import Halo
 from colorama import Fore, init
 from datetime import datetime
 import hashlib
+from dotenv import dotenv_values
 
 # Initialize colorama with auto reset
 init(autoreset=True)
@@ -22,15 +23,23 @@ banner = r"""
 
             BY: ┳┓  ┏┓┓ ┏┓  ┏┓•  ┏┓┓
                 ┣┫┏┓┃┫┃┏ ┫┏┓┃┃┓┓┏ ┫┃
-                ┻┛┛ ┗┛┛┗┗┛┛┗┣┛┗┛┗┗┛┗ Version: 1.1.0
+                ┻┛┛ ┗┛┛┗┗┛┛┗┣┛┗┛┗┗┛┗ Version: 1.2.0
 -----------------------------------------------------------------
 """
 
 # Display program banner at top
 print(f"{Fore.RED}{banner}")
 
-# Optionally use a personal access token for higher rate limits
-GITHUB_TOKEN = input(f"{Fore.YELLOW}Enter GitHub Personal Access Token (or press Enter to skip): ").strip()
+# Check for a personal access token for higher rate limits
+config = dotenv_values("config.env")
+if config.get("GITHUB_TOKEN"):
+    GITHUB_TOKEN = config["GITHUB_TOKEN"]
+else:
+    print(f"{Fore.RED}[WARN]{Fore.RESET}: {Fore.YELLOW}You are using PatchPirate without a GitHub Personal Access Token, this will work for smaller profiles without rate limiting but\nI highly reccomend that you consider adding your PAT to the config.env file.")
+    print(f"{Fore.YELLOW}Your current rate limit is set to 60 requests/hour\n")
+    GITHUB_TOKEN = None
+
+
 HEADERS = {'Authorization': f'token {GITHUB_TOKEN}'} if GITHUB_TOKEN else {}
 
 # Fetch all commits authored by the user across their repositories
@@ -38,51 +47,54 @@ def get_user_commits(username):
     commits = []
     repos = []
 
-    page = 1
-    while True:
-        url = f"https://api.github.com/users/{username}/repos?page={page}&per_page=100"
-        response = requests.get(url, headers=HEADERS)
-        if response.status_code == 403:
-            handle_rate_limit(response)
-        elif response.status_code != 200:
-            raise Exception(f"Error fetching repos: {response.status_code}")
-        data = response.json()
-        if not data:
-            break
-        repos.extend(data)
-        page += 1
+    # Fetch all repositories for the user
+    url = f"https://api.github.com/users/{username}/repos"
+    response = requests.get(url, headers=HEADERS)
+    if response.status_code == 403:
+        handle_rate_limit(response)
+    elif response.status_code != 200:
+        raise Exception(f"Error fetching repos: {response.status_code}")
+    repos = response.json()
+    
+
 
     print(f"{Fore.BLUE}Found {len(repos)} repositories for user {Fore.RED}{username}{Fore.BLUE}.")
-
     working_indicator.start()
     for repo in repos:
         repo_name = repo['name']
         owner = repo['owner']['login']
 
-        page = 1
-        while True:
-            url = f"https://api.github.com/repos/{owner}/{repo_name}/commits?author={username}&page={page}&per_page=100"
-            response = requests.get(url, headers=HEADERS)
-            if response.status_code == 403:
-                handle_rate_limit(response)
-            elif response.status_code != 200:
-                break
-            data = response.json()
-            if not data:
-                break
-            for commit in data:
-                commits.append({
-                    'repo': repo_name,
-                    'message': commit['commit']['message'],
-                    'url': commit['html_url'],
-                    'date': commit['commit']['author']['date'],
-                    'sha': commit['sha'][:7],
-                    'email': commit['commit']['author']['email']
-                })
-            page += 1
+
+        # Fetch commits for the repository
+        url = f"https://api.github.com/repos/{owner}/{repo_name}/commits?author={username}"
+        response = requests.get(url, headers=HEADERS)
+        if response.status_code == 403:
+            handle_rate_limit(response)
+        elif response.status_code != 200:
+            print(f"{Fore.RED}Error fetching commits for {repo['name']}: {response.status_code}")
+        data = response.json()
+        for commit in data:
+            commits.append({
+                'repo': repo_name,
+                'message': commit['commit']['message'],
+                'url': commit['html_url'],
+                'date': commit['commit']['author']['date'],
+                'sha': commit['sha'][:7],
+                'email': commit['commit']['author']['email']
+            })
     working_indicator.stop()
     return commits
 
+def get_user_profile(username):
+    url = f"https://api.github.com/users/{username}"
+    response = requests.get(url, headers=HEADERS)
+    if response.status_code == 403:
+        handle_rate_limit(response)
+    elif response.status_code != 200:
+        raise Exception(f"Error fetching profile: {response.status_code}")
+    return response.json()
+    
+    
 # Handle GitHub rate limiting errors
 def handle_rate_limit(response):
     reset_timestamp = int(response.headers.get('X-RateLimit-Reset', 0))
@@ -93,16 +105,9 @@ def handle_rate_limit(response):
     print(f"{Fore.YELLOW}Rate limit resets at: {Fore.CYAN}{reset_time}")
     raise Exception("Rate limit hit. Please wait for cooldown or use a personal access token.")
 
-def generate_gravatar_url(email):
-    # Normalize the email address
-    email = email.strip().lower()
-    # Calculate MD5 hash
-    email_hash = hashlib.md5(email.encode('utf-8')).hexdigest()
-    # Return the Gravatar URL
-    return f"https://www.gravatar.com/{email_hash} {Fore.BLUE}({Fore.LIGHTBLACK_EX}{email}{Fore.BLUE})"
-
 if __name__ == "__main__":
     username = input(f"{Fore.GREEN}Enter GitHub username: ").strip()
+    profile = get_user_profile(username)
     email_addresses = set()
     obfuscated = ""
     
@@ -124,9 +129,10 @@ if __name__ == "__main__":
         for email in email_addresses:
             print(f"{Fore.GREEN}{email}")
         print("---------------------------------------------------------------------")
-        print(f"{Fore.RED}Gravitars:\n")
+        print(f"{Fore.RED}Profile images:\n")
         for email in email_addresses:
-            print(f"{Fore.GREEN}{generate_gravatar_url(email)}")         
+            print(f"{Fore.GREEN}https://unavatar.io/{email}")
+        print(f"{Fore.GREEN}{profile['avatar_url']}")  
             
 
     
