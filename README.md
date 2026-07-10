@@ -1,26 +1,47 @@
-# PatchPirate
-Github Recon/OSINT Software for finding personal email adresses .
+# 🏴‍☠️ PatchPirate
 
-PatchPirate is a Recon/OSINT software for mass processing GitHub commit and repo data to find unintentionally exposed private email addresses from a GitHub username or account via the GitHub API.
+   [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
+   [![GitHub API](https://img.shields.io/badge/GitHub%20API-v3-black.svg?style=for-the-badge&logo=github)](https://docs.github.com/en/rest)
+   [![License](https://img.shields.io/badge/license-MIT-red.svg?style=for-the-badge)](LICENSE)
 
-## Instalation and use
-Requires python 3.11+ with pip.
+PatchPirate is a focused Recon/OSINT utility built to mass-process public GitHub commit and repository data and identify unintentionally exposed personal email addresses linked to a target GitHub username or account.
 
-To install PatchPirate on Linux run: `git clone https://github.com/FailurePoint/PatchPirate.git & cd PatchPirate & python3 -m pip install -r requirements.txt`
-To run it, from the folder it is installed in run: `python3 patchpirate.py`
+---
 
-## Usage and rate limmits
-Usage is self obvious... please dont ask me how to use it... just use your brain for 30 secconds. it's not that hard.
+## 🚀 Installation
 
-GitHub imposes a rate limmit on unauthenticated users for API access of 60 requests/hr. the usage of the API varies per scan, but is roughly the same as the amount of public repos the target maintains.
-If 60 requests is not going to be enough, you can authenticated using a Personal Acess Token (PAT) and unlock up to 5000 requests an hour. [How do I get one](https://www.geeksforgeeks.org/how-to-generate-personal-access-token-in-github/)?
+### Prerequisites
+* **Python 3.11+**
+* **pip** (Python package installer)
 
-## Screenshots
+### Quick Setup (Linux/macOS)
+Run the following command to clone and install:
+
+```bash
+git clone [https://github.com/FailurePoint/PatchPirate.git](https://github.com/FailurePoint/PatchPirate.git) && cd PatchPirate && python3 -m pip install -r requirements.txt
+```
+
+## 🏃‍♂️‍➡️ Running the App
+Once installed, execute the script directly from your terminal: `cd PatchPirate && python3 patchpirate.py`
+
+## ⚙️ Configuration
+You can tweak the tool's behavior by modifying the configuration file. Below is the standard setup structure:
+```TOML
+GitHub Personal Access Token (required for larger profiles, uncomment to use)
+# GITHUB_TOKEN = ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+# Disable lookups for associated profiles and profile photos (True to disable)
+DISABLE_LOOKUPS = False
+
+# Disable profile information panel (True to disable)
+DISABLE_PROFILE_INFO = False
+```
+
+## 💡 Usage & Rate Limits: 
+Usage is self-obvious... please don't ask how to use it. Just use your brain for 30 seconds. It's really not that hard.The API BottleneckGitHub enforces a strict rate limit of 60 requests per hour for unauthenticated users. A scan's footprint varies depending on how many public repositories the target account maintains. If the target has a significant history, 60 requests may not be enough. In that case you can generate a Personal Access Token (PAT) from your GitHub account settings and add it to your configuration. This raises your limit to 5,000 requests per hour. Need help generating one? Check out [this](https://www.geeksforgeeks.org/git/how-to-generate-personal-access-token-in-github/) guide.
+
+## 📸 Screenshots
+
 ![Menu](Screenshots/menu.png)
 ![Hunting](Screenshots/hunting.png)
 ![Found](Screenshots/found.png)
-
-
-
-
-
