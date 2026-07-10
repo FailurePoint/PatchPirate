@@ -42,6 +42,4 @@ Usage is self-obvious... please don't ask how to use it. Just use your brain for
 
 ## 📸 Screenshots
 
-![Menu](Screenshots/menu.png)
-![Hunting](Screenshots/hunting.png)
-![Found](Screenshots/found.png)
+![Menu](Screenshots/patchpirate.png)
