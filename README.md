@@ -18,7 +18,7 @@ PatchPirate is a focused Recon/OSINT utility built to mass-process public GitHub
 Run the following command to clone and install:
 
 ```bash
-git clone [https://github.com/FailurePoint/PatchPirate.git](https://github.com/FailurePoint/PatchPirate.git) && cd PatchPirate && python3 -m pip install -r requirements.txt
+git clone https://github.com/FailurePoint/PatchPirate.git && cd PatchPirate && python3 -m pip install -r requirements.txt
 ```
 
 ## 🏃‍♂️‍➡️ Running the App
