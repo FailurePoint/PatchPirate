@@ -27,7 +27,7 @@ banner = r"""
 
             BY: ┳┓  ┏┓┓ ┏┓  ┏┓•  ┏┓┓
                 ┣┫┏┓┃┫┃┏ ┫┏┓┃┃┓┓┏ ┫┃
-                ┻┛┛ ┗┛┛┗┗┛┛┗┣┛┗┛┗┗┛┗ Version: 1.2.3
+                ┻┛┛ ┗┛┛┗┗┛┛┗┣┛┗┛┗┗┛┗ Version: 1.2.4
                 
 “The secret of creativity is knowing how to discover and exploit your sources.” ― Prof.Salam Al Shereida 
 -----------------------------------------------------------------
