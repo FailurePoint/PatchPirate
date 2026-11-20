@@ -132,6 +132,16 @@ def get_gravatar_url(email):
         else:
             return "Error fetching Gravatar profile:"
 
+def get_libavatar_url(email):
+    h = hashlib.sha256(email.strip().lower().encode()).hexdigest()
+    r = requests.get(f"https://seccdn.libravatar.org/avatar/{h}?d=404")
+    if r.status_code == 200:
+        return r.url
+    elif r.status_code == 404:
+        return None
+    else:
+        return "Error fetching Libavatar profile:"
+
 if __name__ == "__main__":
     username = input(f"{Fore.GREEN}Enter GitHub username: ").strip()
     if config["DISABLE_PROFILE_INFO"] == "False":
@@ -166,9 +176,10 @@ if __name__ == "__main__":
             print(f"{Fore.GREEN}Last Updated:{Fore.RESET} {profile['updated_at']}\n")
         print("---------------------------------------------------------------------")
         print(f"{Fore.RED}Discovered Email Addresses:\n")
-        print(f"Obfucated noreply address: {Fore.GREEN}{obfuscated}\n")
         for email in email_addresses:
             print(f"{Fore.GREEN}{email}")
+        if obfuscated:
+            print(f"Obfucated noreply address: {Fore.GREEN}{obfuscated}\n")
         if config["DISABLE_LOOKUPS"] == "False":
             print("---------------------------------------------------------------------")
             print(f"{Fore.RED}Profile images:\n")
@@ -178,8 +189,22 @@ if __name__ == "__main__":
                 gravatar_url = get_gravatar_url(email)
                 if gravatar_url is not None:
                     print(f"{Fore.GREEN}{gravatar_url['profile_url']}")
+                else:   
+                    print(f"{Fore.YELLOW}No Gravatar profile found for {email}")
+            for email in email_addresses:
+                libavatar_url = get_libavatar_url(email)
+                if libavatar_url is not None:
+                    print(f"{Fore.GREEN}{libavatar_url}")
+                else:
+                    print(f"{Fore.YELLOW}No Libavatar profile found for {email}")
             print(f"{Fore.GREEN}{profile['avatar_url']}")
-        
+
+            print("\n---------------------------------------------------------------------")
+            print(f"{Fore.RED}Additional Resorces:\n")
+            print(f"{Fore.GREEN} emailOSINT: https://emailosint.com/")
+            print(f"{Fore.GREEN} maxintel: https://maxintel.org/pivot-hub.html?q={email}")
+
+
             
 
     
