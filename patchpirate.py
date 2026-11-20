@@ -244,6 +244,7 @@ if __name__ == "__main__":
             print(f"{Fore.RED}Additional Resorces:\n")
             print(f"{Fore.GREEN} emailOSINT: https://emailosint.com/")
             print(f"{Fore.GREEN} maxintel: https://maxintel.org/pivot-hub.html?q={email}")
+            print("\n")
 
 
             
