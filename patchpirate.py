@@ -7,6 +7,7 @@ from colorama import Fore, init
 from datetime import datetime
 import hashlib
 from dotenv import dotenv_values
+import re
 
 # Initialize colorama with auto reset
 init(autoreset=True)
@@ -31,6 +32,15 @@ banner = r"""
 “The secret of creativity is knowing how to discover and exploit your sources.” ― Prof.Salam Al Shereida 
 -----------------------------------------------------------------
 """
+not_found_banner = r"""
+@@@  @@@  @@@@@@  @@@  @@@
+@@@  @@@ @@!  @@@ @@@  @@@
+@!@!@!@! @!@  !@! @!@!@!@!
+     !!! !!:  !!!      !!!
+     : :  : : ::       : :
+
+-----------------------------------------------------------------
+"""
 
 # Display program banner at top
 print(f"{Fore.RED}{banner}")
@@ -48,16 +58,19 @@ else:
 HEADERS = {'Authorization': f'token {GITHUB_TOKEN}'} if GITHUB_TOKEN else {}
 
 # Fetch all commits authored by the user across their repositories
-def get_user_commits(username):
+def get_target_commits(username):
     commits = []
     repos = []
 
     page = 1
     while True:
-        url = f"https://api.github.com/users/{username}/repos?page={page}&per_page=10000"
+        url = f"https://api.github.com/users/{username}/repos?page={page}&per_page=100"
         response = requests.get(url, headers=HEADERS)
         if response.status_code == 403:
             handle_rate_limit(response)
+        elif response.status_code == 404:
+            print(f"{Fore.RED}No repositories found for user {Fore.BLUE}{username}")
+            break
         elif response.status_code != 200:
             raise Exception(f"Error fetching repos: {response.status_code}")
         data = response.json()
@@ -75,7 +88,7 @@ def get_user_commits(username):
 
         page = 1
         while True:
-            url = f"https://api.github.com/repos/{owner}/{repo_name}/commits?author={username}&page={page}&per_page=10000"
+            url = f"https://api.github.com/repos/{owner}/{repo_name}/commits?author={username}&page={page}&per_page=100"
             response = requests.get(url, headers=HEADERS)
             if response.status_code == 403:
                 handle_rate_limit(response)
@@ -95,19 +108,44 @@ def get_user_commits(username):
                 })
             page += 1
     working_indicator.stop()
-    return commits
+    if commits:
+        return commits
+    else:
+        print(f"{Fore.RED}{not_found_banner}\n\nNo commit history found for {Fore.BLUE}{username}{Fore.RED} - Nothing to show. Sorry!\n")
+        exit(1)
+        
 
-
-def get_user_profile(username):
+def get_target_profile(username):
     url = f"https://api.github.com/users/{username}"
     response = requests.get(url, headers=HEADERS)
     if response.status_code == 403:
         handle_rate_limit(response)
+    elif response.status_code == 404:
+        print(f"{Fore.RED}{not_found_banner}\n\nNo profile found for {Fore.BLUE}{username}{Fore.RED} - Nothing to show. Sorry!\n")
+        exit(1)
     elif response.status_code != 200:
         raise Exception(f"Error fetching profile: {response.status_code}")
     return response.json()
+
+def resolve_target_from_email(email):
+    url = f"https://api.github.com/search/commits?q=author-email:{email}"
+    response = requests.get(url, headers=HEADERS)
+
+    if response.status_code == 403:
+        handle_rate_limit(response)
+    elif response.status_code != 200:
+        raise Exception(f"{Fore.RED}Error Finding Profile: {response.status_code} - {response.text}")
+    data = response.json()
+    if data.get("items"):
+        for item in data["items"]:
+            author = item.get("author")
+            if author and author.get("login"):
+                 return author.get("login")               
+    else:
+        print(f"{Fore.RED}{not_found_banner}\n\nNo profile found for {Fore.BLUE}{email}{Fore.RED} - Nothing to show. Sorry!\n")
+        exit(1)
     
-    
+
 # Handle GitHub rate limiting errors
 def handle_rate_limit(response):
     reset_timestamp = int(response.headers.get('X-RateLimit-Reset', 0))
@@ -130,7 +168,7 @@ def get_gravatar_url(email):
         if e.code == 404:
             None
         else:
-            return "Error fetching Gravatar profile:"
+            return "Error fetching Gravatar profile."
 
 def get_libavatar_url(email):
     h = hashlib.sha256(email.strip().lower().encode()).hexdigest()
@@ -140,25 +178,28 @@ def get_libavatar_url(email):
     elif r.status_code == 404:
         return None
     else:
-        return "Error fetching Libavatar profile:"
+        return "Error fetching Libavatar profile."
 
 if __name__ == "__main__":
-    username = input(f"{Fore.GREEN}Enter GitHub username: ").strip()
+    target = input(f"{Fore.GREEN}Enter GitHub username or email: ").strip()
+    if re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", target):
+        target = resolve_target_from_email(target)
+        print(f"{Fore.GREEN}Found GitHub account with username: {Fore.BLUE}{target}")
     if config["DISABLE_PROFILE_INFO"] == "False":
-        profile = get_user_profile(username)
+        profile = get_target_profile(target)
     email_addresses = set()
     obfuscated = ""
     
     try:
-        user_commits = get_user_commits(username)
-        for commit in user_commits:
+        target_commits = get_target_commits(target)
+        for commit in target_commits:
             email = commit['email']
             if email:
                 if email.endswith("noreply.github.com"):
                     obfuscated = email
                 else:
                     email_addresses.add(email)
-        print(f"{Fore.BLUE}Total commits found: {Fore.RED}{len(user_commits)}")
+        print(f"{Fore.BLUE}Total commits found: {Fore.RED}{len(target_commits)}")
         if config["DISABLE_PROFILE_INFO"] == "False":
             print("---------------------------------------------------------------------")
             print(f"{Fore.RED}Account Details:\n")
@@ -179,7 +220,7 @@ if __name__ == "__main__":
         for email in email_addresses:
             print(f"{Fore.GREEN}{email}")
         if obfuscated:
-            print(f"Obfucated noreply address: {Fore.GREEN}{obfuscated}\n")
+            print(f"\n{Fore.RED}Obfucated noreply address: \n\n{Fore.GREEN}{obfuscated}\n")
         if config["DISABLE_LOOKUPS"] == "False":
             print("---------------------------------------------------------------------")
             print(f"{Fore.RED}Profile images:\n")
