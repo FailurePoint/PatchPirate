@@ -180,6 +180,15 @@ def get_libavatar_url(email):
     else:
         return "Error fetching Libavatar profile."
 
+def append_to_log(text, type="None"):
+    if config.get("VERBOSE_SOURCES_LOGGING") == "True":
+        with open(f"{target}.log", "a", encoding="utf-8") as log_file:
+            if type:
+                log_file.write(f"\n[{type.upper()}]:  {text}")
+            else:
+                log_file.write(f"\n{text}")
+
+
 if __name__ == "__main__":
     target = input(f"{Fore.GREEN}Enter GitHub username or email: ").strip()
     if re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", target):
@@ -187,7 +196,10 @@ if __name__ == "__main__":
         print(f"{Fore.GREEN}Found GitHub account with username: {Fore.BLUE}{target}")
     if config["DISABLE_PROFILE_INFO"] == "False":
         profile = get_target_profile(target)
-    email_addresses = set()
+    if config.get("VERBOSE_SOURCES_LOGGING") == "True":
+        with open(f"{target}.log", "a", encoding="utf-8") as log_file:
+            log_file.write(f"--- PatchPirate Log for {target} ---\n")
+    email_addresses = {}
     obfuscated = ""
     
     try:
@@ -195,12 +207,16 @@ if __name__ == "__main__":
         for commit in target_commits:
             email = commit['email']
             if email:
+                append_to_log(f"{email} --> {commit['url']}", "COMMIT")
                 if email.endswith("noreply.github.com"):
                     obfuscated = email
                 else:
-                    email_addresses.add(email)
+                    if email not in email_addresses:
+                        email_addresses.setdefault(email, {"sha": commit['sha'], "seen": 0})
+                    else:
+                        email_addresses[email]["seen"] += 1
         print(f"{Fore.BLUE}Total commits found: {Fore.RED}{len(target_commits)}")
-        if config["DISABLE_PROFILE_INFO"] == "False":
+        if config.get("DISABLE_PROFILE_INFO") == "False":
             print("---------------------------------------------------------------------")
             print(f"{Fore.RED}Account Details:\n")
             print(f"{Fore.GREEN}Username:{Fore.RESET} {profile['login']}")
@@ -217,11 +233,14 @@ if __name__ == "__main__":
             print(f"{Fore.GREEN}Last Updated:{Fore.RESET} {profile['updated_at']}\n")
         print("---------------------------------------------------------------------")
         print(f"{Fore.RED}Discovered Email Addresses:\n")
-        for email in email_addresses:
-            print(f"{Fore.GREEN}{email}")
+        for email, meta in sorted(email_addresses.items(), key=lambda kv: -kv[1]["seen"]):
+            if config.get("DISABLE_FIRST_SEEN") == "True":
+                print(f"{Fore.GREEN}{email}")
+            else:
+                print(f"{Fore.GREEN}{email} {Fore.BLUE}from {meta['sha']} and {Fore.GREEN}{meta['seen']}{Fore.BLUE} others")
         if obfuscated:
             print(f"\n{Fore.RED}Obfucated noreply address: \n\n{Fore.GREEN}{obfuscated}\n")
-        if config["DISABLE_LOOKUPS"] == "False":
+        if config.get("DISABLE_LOOKUPS") == "False":
             print("---------------------------------------------------------------------")
             print(f"{Fore.RED}Profile images:\n")
             for email in email_addresses:
@@ -254,3 +273,4 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"An error occurred: {e}")
+        
